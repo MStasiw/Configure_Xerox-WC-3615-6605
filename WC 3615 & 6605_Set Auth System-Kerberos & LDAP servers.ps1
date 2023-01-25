@@ -34,6 +34,8 @@ $Request_headers = @{
     Authorization = $basicAuthValue
 }
 
+[int]$result = 0
+
 <#
  Kerberos Server
  # Properties > Secuirty > Kerberos Server
@@ -53,13 +55,13 @@ $setKerberos_params = @{
 
 [string]$urlPath = '/setting/setkrb5.htm'
 try {
-    $result1 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setKerberos_params -Headers $Request_headers
+    $WebRequest1 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setKerberos_params -Headers $Request_headers
 
-    switch ($result1.StatusCode) {
+    switch ($WebRequest1.StatusCode) {
         200 { $FGColour = 'Green'; break }
         default { $FGColour = 'Red'; break }
     }
-    $stdout = "$IPorDNS`tStatus: $($result1.StatusCode) $($result1.StatusDescription)"
+    $stdout = "$IPorDNS`tStatus: $($WebRequest1.StatusCode) $($WebRequest1.StatusDescription)"
     if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
     Write-Debug -Message $stdout
 } catch [System.Security.Authentication.AuthenticationException] {
@@ -70,14 +72,14 @@ try {
     if ($DebugPreference) { Write-Host '' }
     Write-Debug -Message "IP/DNS Address = $IPorDNS"
     Write-Debug -Message $stdout
-    $result = 1
+    $result += 1
 } catch {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch anything"
     $stdout = $_.Exception.ToString()
     if ($DebugPreference) { Write-Host '' }
     Write-Warning -Message "IP/DNS Address = $IPorDNS"
     Write-Warning -Message $stdout
-    $result = 1
+    $result += 1
 }
 
 <#
@@ -97,13 +99,13 @@ $setLDAP_params = @{
 
 [string]$urlPath = '/setting/setldapsvr.htm'
 try {
-    $result2 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setLDAP_params -Headers $Request_headers
+    $WebRequest2 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setLDAP_params -Headers $Request_headers
 
-    switch ($result2.StatusCode) {
+    switch ($WebRequest2.StatusCode) {
         200 { $FGColour = 'Green'; break }
         default { $FGColour = 'Red'; break }
     }
-    $stdout = "$IPorDNS`tStatus: $($result2.StatusCode) $($result2.StatusDescription)"
+    $stdout = "$IPorDNS`tStatus: $($WebRequest2.StatusCode) $($WebRequest2.StatusDescription)"
     if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
     Write-Debug -Message $stdout
 } catch [System.Security.Authentication.AuthenticationException] {
@@ -114,19 +116,19 @@ try {
     if ($DebugPreference) { Write-Host '' }
     Write-Debug -Message "IP/DNS Address = $IPorDNS"
     Write-Debug -Message $stdout
-    $result = 2
+    $result += 2
 } catch {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch anything"
     $stdout = $_.Exception.ToString()
     if ($DebugPreference) { Write-Host '' }
     Write-Warning -Message "IP/DNS Address = $IPorDNS"
     Write-Warning -Message $stdout
-    $result = 2
+    $result += 2
 }
 
 
 
-$ReturnCode = if ($result1.StatusCode -eq 200 -and $result2.StatusCode -eq 200) { $true } else { $result }
+$ReturnCode = if ($WebRequest1.StatusCode -eq 200 -and $WebRequest2.StatusCode -eq 200) { $true } else { $result }
 Write-Debug -Message "`$ReturnCode = $ReturnCode"
 if (!$NestedExecution) { return $ReturnCode | Out-Null }
 return $ReturnCode
