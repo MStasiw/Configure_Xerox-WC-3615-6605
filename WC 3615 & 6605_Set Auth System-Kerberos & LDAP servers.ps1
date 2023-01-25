@@ -40,8 +40,10 @@ $Request_headers = @{
  # /setting/setkrb5.htm
  #
  # Set 'IP Address / Host Name & Port' field to "ca.wal-mart.com"
- # Set 'Port' field to "88"
+ # Set port field to "88"
  # Set 'Domain Name' field to "ca.wal-mart.com"
+ #
+ # But do not restart system.
  #>
 $setKerberos_params = @{
     '102b07'='ca.wal-mart.com'
@@ -80,3 +82,48 @@ try {
     $result = 1
 }
 
+<#
+ LDAP Directory
+ # Properties > Protocols > LDAP Server
+ # /setting/setldapsvr.htm
+ #
+ # Set 'IP Address / Host Name & Port' field to "ca.wal-mart.com"
+ # Set port field to "3268"
+ #
+ # But do not restart system.
+ #>
+$setLDAP_params = @{
+    '102c0c'='ca.wal-mart.com'
+    '102c0d'=3268
+}
+
+[string]$urlPath = '/setting/setldapsvr.htm'
+try {
+    $result2 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setLDAP_params -Headers $Request_headers
+
+    switch ($result2.StatusCode) {
+        200 { $FGColour = 'Green'; break }
+        default { $FGColour = 'Red'; break }
+    }
+    $stdout = "$IPorDNS`tStatus: $($result2.StatusCode) $($result2.StatusDescription)"
+    if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
+    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
+    Write-Debug -Message $stdout
+} catch [System.Security.Authentication.AuthenticationException] {
+    #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch [System.Security.Authentication.AuthenticationException]"
+    $stdout = "$IPorDNS`tException: $($_.Exception.Message)`tInnerException: $($_.Exception.InnerException.Message)"
+    if (!$NestedExecution -and !$DebugPreference) { Write-Warning -Message $stdout }
+    $stdout = $_.Exception.ToString()
+    if ($DebugPreference) { Write-Host '' }
+    Write-Debug -Message "IP/DNS Address = $IPorDNS"
+    Write-Debug -Message $stdout
+    $result = 2
+} catch {
+    #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch anything"
+    $stdout = $_.Exception.ToString()
+    if ($DebugPreference) { Write-Host '' }
+    Write-Warning -Message "IP/DNS Address = $IPorDNS"
+    Write-Warning -Message $stdout
+    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
+    $result = 2
+}
