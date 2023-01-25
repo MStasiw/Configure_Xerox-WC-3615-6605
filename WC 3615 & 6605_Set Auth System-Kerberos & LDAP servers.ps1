@@ -1,6 +1,6 @@
 ﻿<#
 # .MODELS WorkCentre 3615 & 6605
-# .PURPOSE Set both the Kerberos and LDAP server address and port, then set Authentication System settings to Kerberos protocol.
+# .PURPOSE Set both the Kerberos and LDAP server address and port, then set Authentication System settings to Kerberos and LDAP respectively, and finally enable Network Authentication under Secure Settings.
 #>
 param (
     [Parameter(Position=0,Mandatory=$true,
@@ -61,7 +61,6 @@ try {
     }
     $stdout = "$IPorDNS`tStatus: $($result1.StatusCode) $($result1.StatusDescription)"
     if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
     Write-Debug -Message $stdout
 } catch [System.Security.Authentication.AuthenticationException] {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch [System.Security.Authentication.AuthenticationException]"
@@ -78,7 +77,6 @@ try {
     if ($DebugPreference) { Write-Host '' }
     Write-Warning -Message "IP/DNS Address = $IPorDNS"
     Write-Warning -Message $stdout
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
     $result = 1
 }
 
@@ -107,7 +105,6 @@ try {
     }
     $stdout = "$IPorDNS`tStatus: $($result2.StatusCode) $($result2.StatusDescription)"
     if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
     Write-Debug -Message $stdout
 } catch [System.Security.Authentication.AuthenticationException] {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch [System.Security.Authentication.AuthenticationException]"
@@ -124,6 +121,12 @@ try {
     if ($DebugPreference) { Write-Host '' }
     Write-Warning -Message "IP/DNS Address = $IPorDNS"
     Write-Warning -Message $stdout
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
     $result = 2
 }
+
+
+
+$ReturnCode = if ($result1.StatusCode -eq 200 -and $result2.StatusCode -eq 200) { $true } else { $result }
+Write-Debug -Message "`$ReturnCode = $ReturnCode"
+if (!$NestedExecution) { return $ReturnCode | Out-Null }
+return $ReturnCode
