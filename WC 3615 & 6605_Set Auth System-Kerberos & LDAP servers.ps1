@@ -173,8 +173,51 @@ try {
     $result += 3
 }
 
+<#
+ 'Secure Settings' (LUI/Control Panel)
+ # Properties > Security > Secure Settings
+ # /printer/prtpanel.htm
+ #
+ # Network Authentication: Enable 'Network Authentication' - Check the 'On' checkbox
+ # Service Lock: Set 'Email' dropdown to "Password Locked"
+ # Service Lock: Set 'Scan to Network' dropdown to "Password Locked"
+ #>
+$setSecureSettings_params = @{
+    'b03816'=1
+    'b03809'=1
+    'b03806'=1
+}
 
-$ReturnCode = if ($WebRequest1.StatusCode -eq 200 -and $WebRequest2.StatusCode -eq 200 -and $WebRequest3.StatusCode -eq 200) { $true } else { $result }
+[string]$urlPath = '/printer/prtpanel.htm'
+try {
+    $WebRequest4 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setSecureSettings_params -Headers $Request_headers
+
+    switch ($WebRequest4.StatusCode) {
+        200 { $FGColour = 'Green'; break }
+        default { $FGColour = 'Red'; break }
+    }
+    $stdout = "$IPorDNS`tStatus: $($WebRequest4.StatusCode) $($WebRequest4.StatusDescription)"
+    if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
+    Write-Debug -Message $stdout
+} catch [System.Security.Authentication.AuthenticationException] {
+    #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch [System.Security.Authentication.AuthenticationException]"
+    $stdout = "$IPorDNS`tException: $($_.Exception.Message)`tInnerException: $($_.Exception.InnerException.Message)"
+    if (!$NestedExecution -and !$DebugPreference) { Write-Warning -Message $stdout }
+    $stdout = $_.Exception.ToString()
+    if ($DebugPreference) { Write-Host '' }
+    Write-Debug -Message "IP/DNS Address = $IPorDNS"
+    Write-Debug -Message $stdout
+    $result += 4
+} catch {
+    #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch anything"
+    $stdout = $_.Exception.ToString()
+    if ($DebugPreference) { Write-Host '' }
+    Write-Warning -Message "IP/DNS Address = $IPorDNS"
+    Write-Warning -Message $stdout
+    $result += 4
+}
+
+$ReturnCode = if ($WebRequest1.StatusCode -eq 200 -and $WebRequest2.StatusCode -eq 200 -and $WebRequest3.StatusCode -eq 200 -and $WebRequest4 -eq 200) { $true } else { $result }
 Write-Debug -Message "`$ReturnCode = $ReturnCode"
 if (!$NestedExecution) { return $ReturnCode | Out-Null }
 return $ReturnCode
