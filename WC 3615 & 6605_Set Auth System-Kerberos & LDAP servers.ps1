@@ -1,6 +1,6 @@
 ﻿<#
 # .MODELS WorkCentre 3615 & 6605
-# .PURPOSE Set both the Kerberos and LDAP server address and port, then set Authentication System settings to Kerberos protocol.
+# .PURPOSE Set both the Kerberos and LDAP server address and port, then set Authentication System settings to Kerberos and LDAP respectively, and finally enable Network Authentication under Secure Settings.
 #>
 param (
     [Parameter(Position=0,Mandatory=$true,
@@ -34,6 +34,8 @@ $Request_headers = @{
     Authorization = $basicAuthValue
 }
 
+[int]$result = 0
+
 <#
  Kerberos Server
  # Properties > Secuirty > Kerberos Server
@@ -53,15 +55,14 @@ $setKerberos_params = @{
 
 [string]$urlPath = '/setting/setkrb5.htm'
 try {
-    $result1 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setKerberos_params -Headers $Request_headers
+    $WebRequest1 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setKerberos_params -Headers $Request_headers
 
-    switch ($result1.StatusCode) {
+    switch ($WebRequest1.StatusCode) {
         200 { $FGColour = 'Green'; break }
         default { $FGColour = 'Red'; break }
     }
-    $stdout = "$IPorDNS`tStatus: $($result1.StatusCode) $($result1.StatusDescription)"
+    $stdout = "$IPorDNS`tStatus: $($WebRequest1.StatusCode) $($WebRequest1.StatusDescription)"
     if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
     Write-Debug -Message $stdout
 } catch [System.Security.Authentication.AuthenticationException] {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch [System.Security.Authentication.AuthenticationException]"
@@ -71,15 +72,14 @@ try {
     if ($DebugPreference) { Write-Host '' }
     Write-Debug -Message "IP/DNS Address = $IPorDNS"
     Write-Debug -Message $stdout
-    $result = 1
+    $result += 1
 } catch {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch anything"
     $stdout = $_.Exception.ToString()
     if ($DebugPreference) { Write-Host '' }
     Write-Warning -Message "IP/DNS Address = $IPorDNS"
     Write-Warning -Message $stdout
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
-    $result = 1
+    $result += 1
 }
 
 <#
@@ -99,15 +99,14 @@ $setLDAP_params = @{
 
 [string]$urlPath = '/setting/setldapsvr.htm'
 try {
-    $result2 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setLDAP_params -Headers $Request_headers
+    $WebRequest2 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setLDAP_params -Headers $Request_headers
 
-    switch ($result2.StatusCode) {
+    switch ($WebRequest2.StatusCode) {
         200 { $FGColour = 'Green'; break }
         default { $FGColour = 'Red'; break }
     }
-    $stdout = "$IPorDNS`tStatus: $($result2.StatusCode) $($result2.StatusDescription)"
+    $stdout = "$IPorDNS`tStatus: $($WebRequest2.StatusCode) $($WebRequest2.StatusDescription)"
     if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
     Write-Debug -Message $stdout
 } catch [System.Security.Authentication.AuthenticationException] {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch [System.Security.Authentication.AuthenticationException]"
@@ -117,13 +116,65 @@ try {
     if ($DebugPreference) { Write-Host '' }
     Write-Debug -Message "IP/DNS Address = $IPorDNS"
     Write-Debug -Message $stdout
-    $result = 2
+    $result += 2
 } catch {
     #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch anything"
     $stdout = $_.Exception.ToString()
     if ($DebugPreference) { Write-Host '' }
     Write-Warning -Message "IP/DNS Address = $IPorDNS"
     Write-Warning -Message $stdout
-    #if ($LogFile) { $stdout | Out-File -FilePath $LogFile -Append -Force }
-    $result = 2
+    $result += 2
 }
+
+<#
+ Authentication System
+ # Properties > Security > Authentication System
+ # /setting/setauthsys.htm
+ #
+ # 'Authentication Type (for User Authentication)'
+ # Set 'Authentication System Settings' dropdown to "Kerberos (Windows)"
+ #
+ # 'Authentication Type (for Server Address/Phone Book)'
+ # Set 'Authentication System Settings' dropdown to "LDAP"
+ #
+ # But do not restart system.
+ #>
+$setAuthSys_params = @{
+    '102a03'=0
+    '102a02'=3
+}
+
+[string]$urlPath = '/setting/setauthsys.htm'
+try {
+    $WebRequest3 = Invoke-WebRequest -Uri "http://$IPorDNS$urlPath" -Method POST -Body $setAuthSys_params -Headers $Request_headers
+
+    switch ($WebRequest3.StatusCode) {
+        200 { $FGColour = 'Green'; break }
+        default { $FGColour = 'Red'; break }
+    }
+    $stdout = "$IPorDNS`tStatus: $($WebRequest3.StatusCode) $($WebRequest3.StatusDescription)"
+    if (!$NestedExecution -and !$DebugPreference) { Write-Host $stdout -ForegroundColor $FGColour }
+    Write-Debug -Message $stdout
+} catch [System.Security.Authentication.AuthenticationException] {
+    #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch [System.Security.Authentication.AuthenticationException]"
+    $stdout = "$IPorDNS`tException: $($_.Exception.Message)`tInnerException: $($_.Exception.InnerException.Message)"
+    if (!$NestedExecution -and !$DebugPreference) { Write-Warning -Message $stdout }
+    $stdout = $_.Exception.ToString()
+    if ($DebugPreference) { Write-Host '' }
+    Write-Debug -Message "IP/DNS Address = $IPorDNS"
+    Write-Debug -Message $stdout
+    $result += 3
+} catch {
+    #Write-Debug -Message "Entered $($MyInvocation.MyCommand) Catch anything"
+    $stdout = $_.Exception.ToString()
+    if ($DebugPreference) { Write-Host '' }
+    Write-Warning -Message "IP/DNS Address = $IPorDNS"
+    Write-Warning -Message $stdout
+    $result += 3
+}
+
+
+$ReturnCode = if ($WebRequest1.StatusCode -eq 200 -and $WebRequest2.StatusCode -eq 200 -and $WebRequest3.StatusCode -eq 200) { $true } else { $result }
+Write-Debug -Message "`$ReturnCode = $ReturnCode"
+if (!$NestedExecution) { return $ReturnCode | Out-Null }
+return $ReturnCode
