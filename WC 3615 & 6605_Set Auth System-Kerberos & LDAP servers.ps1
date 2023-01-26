@@ -218,6 +218,17 @@ try {
 }
 
 $ReturnCode = if ($WebRequest1.StatusCode -eq 200 -and $WebRequest2.StatusCode -eq 200 -and $WebRequest3.StatusCode -eq 200 -and $WebRequest4 -eq 200) { $true } else { $result }
-Write-Debug -Message "`$ReturnCode = $ReturnCode"
+Write-Verbose -Message "`$ReturnCode = $ReturnCode"
 if (!$NestedExecution) { return $ReturnCode | Out-Null }
 return $ReturnCode
+
+<#
+1st fails				ReturnCode=1
+2nd fails				ReturnCode=2
+3rd fails				ReturnCode=3
+1st & 2nd fails			ReturnCode=3
+1st & 3rd fails			ReturnCode=4
+2nd & 3rd fails			ReturnCode=5
+1st, 2nd, & 3rd fail	ReturnCode=6
+...
+#>
